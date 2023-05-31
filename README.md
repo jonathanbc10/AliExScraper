@@ -20,7 +20,6 @@
 ## Table of Contents
 
 - [Features](#features)
-- [Preview](#preview)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Built With](#built-with)
