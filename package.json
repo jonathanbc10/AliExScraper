@@ -1,0 +1,28 @@
+{
+  "name": "aliescraper",
+  "version": "1.0.0",
+  "description": "Aliexpress Web Scraper to get items",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathanbc10/AliExScraper.git"
+  },
+  "keywords": [
+    "aliexpress",
+    "scraper",
+    "web",
+    "scraper",
+    "data",
+    "api",
+    "express"
+  ],
+  "author": "Jonathan B.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jonathanbc10/AliExScraper/issues"
+  },
+  "homepage": "https://github.com/jonathanbc10/AliExScraper#readme"
+}
