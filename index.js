@@ -1,59 +1,67 @@
+// Import required modules
 const axios = require('axios')
 const cheerio = require('cheerio')
 const express = require('express')
 
+// Load environment variables
 require('dotenv').config()
 
+// Set up the server port
 const PORT = process.env.PORT || 3000
-const urls = [
-	'https://www.aliexpress.com/w/wholesale-grinder.html?page=1',
-	'https://www.aliexpress.com/w/wholesale-grinder.html?page=2',
-	'https://www.aliexpress.com/w/wholesale-grinder.html?page=3',
-	'https://www.aliexpress.com/w/wholesale-grinder.html?page=4',
-]
 
+// Initialize the express app
 const app = express()
 
-const results = []
+// Set up middleware to parse JSON data
+app.use(express.json())
 
-const getLinks = async () => {
-	try {
-		const responses = await Promise.all(
-			urls.map(url => axios.get(url))
-		)
+// Define app endpoint
+app.get('/alisearch', async (req, res) => {
+    // Destructure the "term" and "pages" variables from the query string
+    const { term, pages } = req.query
 
-		responses.forEach(response => {
-			const html = response.data
-			const $ = cheerio.load(html)
-			$('a[class*="main--card--"]').each(function () {
-				const itemLink = $(this).attr('href')
-				const itemName = $(this).find('h1').text()
-				const itemImg = $(this).find('.product-img').attr('src')
-				const prevPrice = $(this).find('div[class*="price-original"]').text()
-				const currentPrice = $(this).find('div[class*="price-sale"]').text()
-				results.push({
-					itemName,
-					itemLink,
-					itemImg,
-					prevPrice,
-					currentPrice
-				})
-			})
-		})
+    // Generate an array of URLs to scrape (based on number of pages)
+    const urls = Array.from({ length: pages }, (_, i) => `https://www.aliexpress.com/w/wholesale-${term}.html?page=${i+1}`)
 
-		console.log(getResults())
-		
-	} catch (error) {
-		console.error(error)
-	}
-}
+    // Initialize an empty array to store the scraped results
+    const results = []
+    try {
+        // Make requests to the URLs using axios and store their responses
+        const responses = await Promise.all(urls.map(url => axios.get(url)))
 
-const getResults = () => {
-	return results
-}
+        // Iterate through each response and scrape relevant data
+        responses.forEach(response => {
+            // Parse the HTML response using cheerio
+            const html = response.data
+            const $ = cheerio.load(html)
 
-getLinks()
+            // Find all items on the page with the "main--card--" class and scrape their data
+            $('a[class*="main--card--"]').each(function () {
+                const itemLink = $(this).attr('href').replace(/^\/*(.*aliexpress\.com)/, 'https://$1').replace("m.", ""); // Scrape item link and remove "m." from m.aliexpress links
+                const itemName = $(this).find('h1').text() // Scrape item name
+                const itemImg = $(this).find('.product-img').attr('src').replace(/^\/\//, 'https://') // Scrape item image URL and replace "//" with "https://"
+                const prevPrice = $(this).find('div[class*="price-original"]').text() // Scrape item previous price (if available)
+                const currentPrice = $(this).find('div[class*="price-sale"]').text() // Scrape item current price
+                results.push({
+                    itemName,
+                    itemLink: itemLink.replace("m.", ""), // Store item link without "m." from m.aliexpress links
+                    itemImg,
+                    prevPrice,
+                    currentPrice
+                })
+            })
+        })
 
+        // Send the scraped results as a JSON response
+        res.send(results)
+    } catch (error) {
+        // Handle any errors that occur during scraping or sending the response
+        console.error(error)
+        res.status(500).send(error.message)
+    }
+})
+
+// Start the server
 app.listen(PORT, () => {
-	console.log(`Example app listening on port ${PORT}!`)
+    console.log(`Example app listening on port ${PORT}`)
 })
